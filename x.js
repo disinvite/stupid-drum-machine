@@ -1,5 +1,6 @@
 let ctx;
-
+let audio;
+let sounds;
 let pattern = [
 '*---*---*---*---', // kick?
 '----------------'  // snare?
@@ -13,10 +14,31 @@ let step = 0;
 // 4 beats
 // 
 
-function go() {
+function play1() {
+  var source = audio.createBufferSource();
+  source.buffer = sounds[0];
+  source.connect(audio.destination);
+  source['start'](0);
+}
+
+async function go() {
+  sounds = await load();
+
   clearScreen();
-  gameloop();
+  //gameloop();
   graphics();
+}
+
+async function load() {
+  let sounds = ['sound1.wav', 'sound2.wav'];
+
+  let promises = sounds.map((file) => {
+    return fetch(`wavs/${file}`)
+      .then((response) => response.arrayBuffer())
+      .then((buffer) => audio.decodeAudioData(buffer))
+  });
+
+  return await Promise.all(promises);
 }
 
 function clearScreen() {
@@ -55,22 +77,23 @@ function drawPattern() {
 // update every 125ms
 
 function gameloop() {
+  if(pattern[0][step] == '*') {
+    play1();
+  }
+
   step = (step + 1) % 16;
 
   //console.log(step);
   setTimeout(gameloop, 125);
 }
 
-function __onload() {
+$(() => {
   let canvas = document.getElementById('canvas');
+  audio = new (window.AudioContext || window.webkitAudioContext)();
+
   if(canvas) {
     ctx = canvas.getContext('2d');
     go();
-  } else {
-    return;
   }
-}
+});
 
-
-// go!
-window.onload = __onload;
